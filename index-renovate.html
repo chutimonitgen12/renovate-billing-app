@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบัญชีงานโปรเจกต์ Renovate (Online Version)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        /* สไตล์ทั้งหมดเหมือนเดิมเป๊ะ เพื่อความสวยงาม */
+        :root {
+            --primary-color: #1E293B; --secondary-color: #3B82F6; --success-color: #10B981; 
+            --danger-color: #EF4444; --warning-color: #F59E0B; --export-color: #10B981; 
+            --bg-color: #F1F5F9; --box-bg: #FFFFFF; --border-color: #E2E8F0; 
+            --text-main: #334155; --text-muted: #94A3B8; 
+        }
+        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 1050px; }
+        .project-control-panel { background-color: var(--primary-color); padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); flex-wrap: wrap; gap: 15px; }
+        .project-select-group { display: flex; align-items: center; flex: 1; min-width: 280px; }
+        .project-control-panel label { color: white; font-size: 16px; margin-right: 12px; white-space: nowrap; font-weight: 600; }
+        #projectSelect { flex: 1; padding: 10px; border-radius: 6px; border: none; font-size: 16px; font-weight: bold; background: white; color: var(--primary-color); cursor: pointer; }
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px; }
+        .btn-success { background-color: var(--secondary-color); } .btn-success:hover { background-color: #2563EB; }
+        .btn-export { background-color: var(--export-color); } .btn-export:hover { background-color: #059669; }
+        .btn-danger { background-color: var(--danger-color); } .btn-danger:hover { background-color: #DC2626; }
+        .form-container, .dashboard-container, .table-container { background-color: var(--box-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2, h3 { color: var(--primary-color); margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; font-size: 18px; }
+        .form-row { display: flex; flex-wrap: wrap; gap: 15px; } .form-group { margin-bottom: 15px; flex: 1; min-width: 220px; } .form-group.full-width { flex: 100%; }
+        label.form-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: var(--primary-color); }
+        input[type="text"], input[type="number"], input[type="date"], select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 15px; box-sizing: border-box; font-family: inherit; }
+        .radio-group { display: flex; gap: 20px; padding: 8px 0; } .radio-group label { display: flex; align-items: center; cursor: pointer; font-weight: normal; } .radio-group input[type="radio"] { margin-right: 6px; width: 16px; height: 16px; }
+        .file-upload-wrapper { border: 2px dashed var(--border-color); border-radius: 8px; padding: 15px; text-align: center; background-color: #F8FAFC; }
+        input[type="file"] { display: none; }
+        .file-upload-btn { background-color: #E2E8F0; color: var(--primary-color); padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-block; }
+        .image-preview { margin-top: 10px; max-height: 120px; display: none; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-left: auto; margin-right: auto; }
+        .submit-btn { background-color: var(--secondary-color); color: white; padding: 12px 24px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.3s; }
+        .submit-btn:hover { background-color: #2563EB; }
+        .summary-cards { display: flex; gap: 15px; flex-wrap: wrap; } .card { flex: 1; min-width: 220px; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; background: #F8FAFC; }
+        .card h4 { margin: 0 0 10px 0; color: var(--text-muted); font-size: 14px; } .card .amount { font-size: 22px; font-weight: bold; }
+        .text-success { color: var(--success-color); } .text-danger { color: var(--danger-color); } .text-warning { color: var(--warning-color); }
+        .table-responsive { overflow-x: auto; } table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; vertical-align: middle; } th { background-color: var(--primary-color); color: white; white-space: nowrap; } tr:hover { background-color: #F8FAFC; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; } .badge-income { background-color: var(--success-color); } .badge-expense { background-color: var(--danger-color); }
+        .thumb-img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #ccc; transition: transform 0.2s; } .thumb-img:hover { transform: scale(1.1); }
+        .btn-delete { background-color: var(--danger-color); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .modal { display: none; position: fixed; z-index: 1000; padding-top: 60px; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); }
+        .modal-content { margin: auto; display: block; max-width: 90%; max-height: 80vh; border-radius: 8px; } .close-modal { position: absolute; top: 20px; right: 35px; color: #ffffff; font-size: 40px; font-weight: bold; cursor: pointer; } .hidden { display: none; }
+        
+        /* เพิ่มสไตล์แจ้งเตือนสถานะออนไลน์ */
+        #syncStatus {
+            text-align: center; font-size: 13px; margin-top: -10px; margin-bottom: 10px; font-weight: bold; color: var(--success-color);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="syncStatus">☁️ กำลังเชื่อมต่อฐานข้อมูล...</div>
+    <div class="project-control-panel">
+        <div class="project-select-group">
+            <label for="projectSelect">📂 เลือกโปรเจกต์:</label>
+            <select id="projectSelect" onchange="changeProject()"></select>
+        </div>
+        <div class="action-buttons">
+            <button class="btn btn-export" onclick="exportToBeautifulExcel()">📊 ส่งออก Excel</button>
+            <button class="btn btn-success" onclick="createNewProject()">+ เพิ่มโปรเจกต์</button>
+            <button class="btn btn-danger" onclick="deleteCurrentProject()">🗑️ ลบโปรเจกต์</button>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <h2>📝 บันทึกรายรับ - รายจ่าย</h2>
+        <form id="billingForm">
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label class="form-label">ประเภทรายการ</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="tx_type" value="expense" checked onchange="toggleCategorySelect()"> รายจ่าย</label>
+                        <label><input type="radio" name="tx_type" value="income" onchange="toggleCategorySelect()"> รายรับ</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="txDate">วันที่</label>
+                    <input type="date" id="txDate" required>
+                </div>
+                <div class="form-group" id="categoryGroup">
+                    <label class="form-label" for="txCategory">หมวดหมู่รายการ</label>
+                    <select id="txCategory" required>
+                        <option value="" disabled selected>-- เลือกหมวดหมู่ --</option>
+                        <option value="ค่าช่าง">ค่าช่าง</option>
+                        <option value="ปลวก">กำจัดปลวก</option>
+                        <option value="SPC (ของ+ช่าง)">SPC (ของ+ช่าง)</option>
+                        <option value="ร้านสี">ร้านสี</option>
+                        <option value="วัสดุ">วัสดุทั่วไป</option>
+                        <option value="อลูมิเนียม">อลูมิเนียม</option>
+                        <option value="เหล็ก-หลังคา-รางน้ำ">เหล็ก-หลังคา-รางน้ำ</option>
+                        <option value="ไทวัสดุ Hmpro">ไทวัสดุ Hmpro (ก/บ, บันได, สุขภัณฑ์)</option>
+                        <option value="อื่นๆ">อื่นๆ (น้ำไฟ..) + ค่าติดตั้งประปาไฟ</option>
+                        <option value="ค่าส่วนกลาง">ค่าส่วนกลาง + มัดจำนิติ</option>
+                        <option value="แอร์">แอร์</option>
+                        <option value="ผ้าม่าน">ผ้าม่าน</option>
+                        <option value="ปั๊มน้ำ">ปั๊มน้ำ + แท็งค์น้ำ</option>
+                        <option value="ตกแต่ง">ตกแต่ง + เฟอร์นิเจอร์</option>
+                        <option value="แม่บ้าน">แม่บ้าน</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="txAmount">จำนวนเงิน (บาท)</label>
+                    <input type="number" id="txAmount" step="0.01" min="0.01" placeholder="0.00" required>
+                </div>
+                <div class="form-group full-width">
+                    <label class="form-label" for="txDescription">รายละเอียดเพิ่มเติม</label>
+                    <input type="text" id="txDescription" placeholder="ระบุรายละเอียดงาน เช่น ชำระงวดที่ 1...">
+                </div>
+                <div class="form-group full-width">
+                    <label class="form-label">แนบภาพสลิปธนาคาร / ใบเสร็จ</label>
+                    <div class="file-upload-wrapper">
+                        <label for="slipInput" class="file-upload-btn">📷 เลือกรูปภาพ</label>
+                        <input type="file" id="slipInput" accept="image/*" onchange="handleImageUpload(event)">
+                        <div id="fileNameDisplay" style="font-size: 13px; color: var(--text-muted); margin-top: 5px;">ยังไม่ได้เลือกไฟล์</div>
+                        <img id="imagePreview" class="image-preview" alt="ตัวอย่างสลิป">
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="submit-btn" onclick="saveTransaction()">➕ บันทึกข้อมูลออนไลน์</button>
+        </form>
+    </div>
+
+    <div class="dashboard-container">
+        <h3>📊 สรุปยอดรวมโปรเจกต์: <span id="currentProjectTitle" style="color: var(--secondary-color);"></span></h3>
+        <div class="summary-cards">
+            <div class="card"><h4>รายรับรวม (Budget)</h4><div class="amount text-success" id="summaryIncome">0.00</div></div>
+            <div class="card"><h4>รายจ่ายรวม (Expenses)</h4><div class="amount text-danger" id="summaryExpense">0.00</div></div>
+            <div class="card"><h4>งบประมาณคงเหลือ (Balance)</h4><div class="amount text-warning" id="summaryBalance">0.00</div></div>
+        </div>
+        
+        <div style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+            <h4 style="margin-top: 0; margin-bottom: 15px; color: var(--text-main); font-size: 15px;">🏷️ สรุปรายจ่ายแยกตามหมวดหมู่</h4>
+            <div id="categorySummaryCards" style="display: flex; flex-wrap: wrap; gap: 12px;">
+                </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
+            <h3 style="border: none; padding: 0; margin: 0;">📋 ตารางรายการเดินบัญชี</h3>
+            <select id="tableCategoryFilter" onchange="applyCategoryFilter()" style="width: auto; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); font-family: inherit; font-weight: bold; color: var(--primary-color);">
+                <option value="all">-- ดูทุกหมวดหมู่ --</option>
+            </select>
+        </div>
+        
+        <div class="table-responsive">
+            <table id="billingTable">
+                <thead>
+                    <tr><th>วันที่</th><th>ประเภท</th><th>หมวดหมู่</th><th>รายละเอียด</th><th style="text-align: center;">สลิป</th><th style="text-align: right;">รายรับ</th><th style="text-align: right;">รายจ่าย</th><th style="text-align: center;">จัดการ</th></tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+<div id="imageModal" class="modal" onclick="closeImageModal()"><span class="close-modal">&times;</span><img class="modal-content" id="modalTargetImg"></div>
+
+<script>
+    // ==========================================
+    // ⚠️ นำลิงก์จาก Google Apps Script มาใส่ตรงนี้
+    // ==========================================
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOJbUzBwteI-1-6XHkdt463jQlwJKgudW6pPuCTbTfUzfneh-Ob7lrES4sVDqCNy9X/exec"; 
+    
+    let systemData = { projects: ['โปรเจกต์หลัก'], transactions: [] };
+    let activeProject = 'โปรเจกต์หลัก';
+    let base64ImageStr = null;
+// ---------------- เพิ่มตัวแปรและฟังก์ชันนี้เข้าไป ----------------
+    let currentCategoryFilter = 'all';
+
+    function applyCategoryFilter() {
+        currentCategoryFilter = document.getElementById('tableCategoryFilter').value;
+        renderProjectDashboardAndTable(); // สั่งให้วาดตารางใหม่ตามหมวดหมู่ที่เลือก
+    }
+    // -----------------------------------------------------------
+
+    // 1. ตอนเปิดเว็บ: โหลดจากเครื่องก่อน เพื่อความเร็ว แล้วค่อยดึง Google แบบเบื้องหลัง
+    function loadSystem() {
+        const storedData = localStorage.getItem('renovateDataOnline');
+        if (storedData) {
+            systemData = JSON.parse(storedData);
+            activeProject = systemData.projects[0] || 'โปรเจกต์หลัก';
+            refreshProjectDropdown();
+            renderProjectDashboardAndTable();
+        }
+        document.getElementById('txDate').valueAsDate = new Date();
+        syncFromDatabase(); // สั่งดึงข้อมูลล่าสุดจาก Google Sheets
+    }
+
+    // 2. ซิงค์ข้อมูลกับ Google Sheets (ดึงข้อมูล)
+    async function syncFromDatabase() {
+        try {
+            const res = await fetch(GOOGLE_SCRIPT_URL);
+            const dbData = await res.json();
+            
+            if (dbData && Array.isArray(dbData)) {
+                systemData.transactions = dbData;
+                // อัปเดตรายชื่อโปรเจกต์อัตโนมัติจากฐานข้อมูล
+                const dbProjects = [...new Set(dbData.map(t => t.project))];
+                dbProjects.forEach(p => {
+                    if(!systemData.projects.includes(p)) systemData.projects.push(p);
+                });
+                
+                persistData(); // บันทึกลงเครื่อง
+                refreshProjectDropdown();
+                renderProjectDashboardAndTable();
+                document.getElementById('syncStatus').innerHTML = "🟢 ซิงค์ฐานข้อมูลออนไลน์สำเร็จ (ข้อมูลล่าสุด)";
+            }
+        } catch (e) {
+            document.getElementById('syncStatus').innerHTML = "🟡 ใช้งานโหมดออฟไลน์ (จะอัปเดตเมื่อเชื่อมต่อเน็ตได้)";
+        }
+    }
+
+    // 3. ฟังก์ชันส่งคำสั่งไป Google Sheets แบบพื้นหลัง (ไม่ทำให้เว็บค้าง)
+    function sendCommandToGoogle(actionName, payloadData) {
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: actionName, ...payloadData })
+        }).catch(err => console.log("รอการเชื่อมต่ออินเทอร์เน็ต..."));
+    }
+
+    function persistData() { localStorage.setItem('renovateDataOnline', JSON.stringify(systemData)); }
+
+    function refreshProjectDropdown() {
+        const dropdown = document.getElementById('projectSelect');
+        dropdown.innerHTML = '';
+        systemData.projects.forEach(p => {
+            let opt = document.createElement('option'); opt.value = p; opt.textContent = p;
+            if (p === activeProject) opt.selected = true; dropdown.appendChild(opt);
+        });
+        document.getElementById('currentProjectTitle').textContent = activeProject;
+    }
+
+    function changeProject() { activeProject = document.getElementById('projectSelect').value; renderProjectDashboardAndTable(); }
+
+    function createNewProject() {
+        const pName = prompt('กรุณากรอกชื่อโปรเจกต์ใหม่ที่ต้องการเพิ่ม:');
+        if (pName && pName.trim() !== '') {
+            if (systemData.projects.includes(pName.trim())) return alert('⚠️ มีโปรเจกต์ชื่อนี้แล้ว');
+            systemData.projects.push(pName.trim());
+            activeProject = pName.trim();
+            persistData(); refreshProjectDropdown(); renderProjectDashboardAndTable();
+        }
+    }
+
+    function deleteCurrentProject() {
+        if (systemData.projects.length <= 1) return alert('⚠️ ไม่สามารถลบโปรเจกต์สุดท้ายได้');
+        if (confirm(`❌ แน่ใจไหมว่าต้องการลบโปรเจกต์ "${activeProject}" ถาวร ทั้งในเว็บและ Google Sheets?`)) {
+            // ลบในเครื่อง
+            systemData.transactions = systemData.transactions.filter(t => t.project !== activeProject);
+            systemData.projects = systemData.projects.filter(p => p !== activeProject);
+            const deletedProject = activeProject;
+            activeProject = systemData.projects[0];
+            persistData(); refreshProjectDropdown(); renderProjectDashboardAndTable();
+            
+            // ลบในฐานข้อมูลออนไลน์
+            sendCommandToGoogle('delete_project', { project: deletedProject });
+        }
+    }
+
+    function toggleCategorySelect() {
+        const type = document.querySelector('input[name="tx_type"]:checked').value;
+        const group = document.getElementById('categoryGroup');
+        const select = document.getElementById('txCategory');
+        if (type === 'income') { group.classList.add('hidden'); select.removeAttribute('required'); } 
+        else { group.classList.remove('hidden'); select.setAttribute('required', 'required'); }
+    }
+
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            document.getElementById('fileNameDisplay').textContent = "กำลังบีบอัดรูปภาพ...";
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const max_size = 500; let width = img.width; let height = img.height;
+                    if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } } 
+                    else { if (height > max_size) { width *= max_size / height; height = max_size; } }
+                    canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    base64ImageStr = canvas.toDataURL('image/jpeg', 0.5);
+                    document.getElementById('imagePreview').src = base64ImageStr; 
+                    document.getElementById('imagePreview').style.display = 'block';
+                    document.getElementById('fileNameDisplay').textContent = file.name;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function currencyFormat(val) { return Number(val).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+    function saveTransaction() {
+        const type = document.querySelector('input[name="tx_type"]:checked').value;
+        const date = document.getElementById('txDate').value;
+        const category = document.getElementById('txCategory').value;
+        const amount = document.getElementById('txAmount').value;
+        const desc = document.getElementById('txDescription').value;
+
+        if (!date || !amount || (type === 'expense' && !category)) return alert('⚠️ กรุณากรอกรายละเอียดให้ครบถ้วน');
+
+        const payload = {
+            id: 'tx_' + Date.now(), project: activeProject, date: date, type: type,
+            category: type === 'income' ? 'รายรับรวม' : category, description: desc || '-',
+            amount: parseFloat(amount), receiptImage: base64ImageStr || "-"
+        };
+
+        // 1. โชว์ที่หน้าเว็บทันที
+        systemData.transactions.push(payload);
+        persistData();
+        renderProjectDashboardAndTable();
+
+        // 2. ส่งขึ้น Google Sheets ทันที
+        sendCommandToGoogle('add', { data: payload });
+
+        document.getElementById('txAmount').value = ''; document.getElementById('txDescription').value = '';
+        document.getElementById('slipInput').value = ''; document.getElementById('imagePreview').style.display = 'none';
+        document.getElementById('fileNameDisplay').textContent = 'ยังไม่ได้เลือกไฟล์'; base64ImageStr = null;
+    }
+
+    function removeTransaction(id) {
+        if (confirm('ลบรายการนี้ถาวรจากฐานข้อมูลหรือไม่?')) {
+            systemData.transactions = systemData.transactions.filter(t => t.id !== id);
+            persistData();
+            renderProjectDashboardAndTable();
+            sendCommandToGoogle('delete', { id: id });
+        }
+    }
+
+    function renderProjectDashboardAndTable() {
+        let totalIncome = 0; let totalExpense = 0;
+        let categoryTotals = {}; // ตัวแปรเก็บยอดรวมแต่ละหมวดหมู่
+        
+        const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
+        
+        const currentTxList = systemData.transactions.filter(t => t.project === activeProject);
+        const sortedTxList = currentTxList.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // 1. ดึงหมวดหมู่ทั้งหมดที่มีในโปรเจกต์นี้มาใส่ใน Dropdown ตัวกรอง
+        const filterSelect = document.getElementById('tableCategoryFilter');
+        const uniqueCategories = [...new Set(currentTxList.map(t => t.category))];
+        
+        if (filterSelect) {
+            filterSelect.innerHTML = '<option value="all">-- ดูทุกหมวดหมู่ --</option>';
+            uniqueCategories.forEach(cat => {
+                let opt = document.createElement('option'); opt.value = cat; opt.textContent = cat;
+                filterSelect.appendChild(opt);
+            });
+            // คืนค่าที่เลือกไว้ก่อนหน้า
+            if (uniqueCategories.includes(currentCategoryFilter)) {
+                filterSelect.value = currentCategoryFilter;
+            } else {
+                currentCategoryFilter = 'all';
+            }
+        }
+
+        // 2. กรองข้อมูลเฉพาะที่จะเอามาโชว์ในตาราง
+        const tableDataToShow = sortedTxList.filter(t => typeof currentCategoryFilter === 'undefined' || currentCategoryFilter === 'all' || t.category === currentCategoryFilter);
+
+        // 3. คำนวณยอดรวม และ ยอดแยกหมวดหมู่ (คิดจาก "ทุกรายการในโปรเจกต์")
+        sortedTxList.forEach(t => {
+            if (t.type === 'income') {
+                totalIncome += t.amount;
+            } else {
+                totalExpense += t.amount;
+                // บวกยอดเข้าหมวดหมู่สำหรับฝั่งรายจ่าย
+                if (!categoryTotals[t.category]) categoryTotals[t.category] = 0;
+                categoryTotals[t.category] += t.amount;
+            }
+        });
+
+        // 4. วาดตาราง
+        tableDataToShow.forEach(t => {
+            let tr = document.createElement('tr');
+            let badge = t.type === 'income' ? '<span class="badge badge-income">รายรับ</span>' : '<span class="badge badge-expense">รายจ่าย</span>';
+            let slipElement = (t.receiptImage && t.receiptImage !== "-") ? `<img src="${t.receiptImage}" class="thumb-img" onclick="showImageModal('${t.receiptImage}')" alt="สลิป">` : '<span style="color:#bfbfbf;">-</span>';
+
+            let displayDate = new Date(t.date);
+            let formattedDate = !isNaN(displayDate.getTime()) ? displayDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : t.date;
+
+            tr.innerHTML = `
+                <td>${formattedDate}</td><td>${badge}</td><td>${t.category}</td><td>${t.description}</td><td style="text-align: center;">${slipElement}</td>
+                <td style="text-align: right; color: var(--success-color); font-weight: 500;">${t.type === 'income' ? currencyFormat(t.amount) : '-'}</td>
+                <td style="text-align: right; color: var(--danger-color); font-weight: 500;">${t.type === 'expense' ? currencyFormat(t.amount) : '-'}</td>
+                <td style="text-align: center;"><button class="btn-delete" onclick="removeTransaction('${t.id}')">ลบ</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        if (tableDataToShow.length === 0) tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">🏠 ไม่มีข้อมูล</td></tr>`;
+
+        // 5. อัปเดตการ์ดยอดสรุปด้านบน
+        document.getElementById('summaryIncome').textContent = currencyFormat(totalIncome);
+        document.getElementById('summaryExpense').textContent = currencyFormat(totalExpense);
+        document.getElementById('summaryBalance').textContent = currencyFormat(totalIncome - totalExpense);
+
+        // 6. อัปเดตสรุปยอดแยกหมวดหมู่
+        const catSummaryContainer = document.getElementById('categorySummaryCards');
+        if (catSummaryContainer) {
+            catSummaryContainer.innerHTML = '';
+            // เรียงลำดับหมวดหมู่จาก จ่ายมาก -> จ่ายน้อย
+            const catKeys = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a]); 
+            
+            if (catKeys.length === 0) {
+                catSummaryContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">ยังไม่มีข้อมูลรายจ่าย</span>';
+            } else {
+                catKeys.forEach(cat => {
+                    let catCard = document.createElement('div');
+                    // สไตล์ของกล่องสรุปแต่ละหมวดหมู่
+                    catCard.style = "background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 200px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
+                    catCard.innerHTML = `
+                        <span style="font-size: 14px; color: var(--primary-color); font-weight: 600;">${cat}</span>
+                        <span style="font-size: 15px; color: var(--danger-color); font-weight: bold;">${currencyFormat(categoryTotals[cat])}</span>
+                    `;
+                    catSummaryContainer.appendChild(catCard);
+                });
+            }
+        }
+    }
+
+    function showImageModal(source) { document.getElementById('imageModal').style.display = "block"; document.getElementById('modalTargetImg').src = source; }
+    function closeImageModal() { document.getElementById('imageModal').style.display = "none"; }
+
+    // ฟังก์ชัน Excel ระดับพรีเมียม สวยงาม
+    async function exportToBeautifulExcel() {
+        const projectData = systemData.transactions.filter(t => t.project === activeProject);
+        if (projectData.length === 0) return alert('⚠️ ไม่มีข้อมูลในโปรเจกต์นี้ที่สามารถส่งออกได้ครับ');
+        
+        const sortedData = [...projectData].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Renovate Billing System';
+        workbook.created = new Date();
+
+        // ----------------------------------------------------
+        // ชีทที่ 1: Dashboard สรุปภาพรวมโครงการ
+        // ----------------------------------------------------
+        const wsDash = workbook.addWorksheet('Dashboard สรุปภาพรวม', {views:[{showGridLines: true}]});
+        wsDash.getColumn('B').width = 42;
+        wsDash.getColumn('C').width = 24;
+        wsDash.getColumn('E').width = 22;
+        wsDash.getColumn('G').width = 22;
+
+        // หัวข้อหลักหน้า Dashboard
+        wsDash.mergeCells('B2:G2');
+        const titleCell = wsDash.getCell('B2');
+        titleCell.value = `📊 รายงานสรุปงบประมาณและค่าใช้จ่ายโครงการ: ${activeProject}`;
+        titleCell.font = { size: 15, bold: true, color: { argb: 'FF0F172A' }, name: 'Segoe UI' };
+        wsDash.getRow(2).height = 32;
+
+        let totalInc = 0; let totalExp = 0;
+        sortedData.forEach(t => { if(t.type === 'income') totalInc += t.amount; else totalExp += t.amount; });
+        let balance = totalInc - totalExp;
+
+        // กล่องสรุปรายรับ (สีเขียว)
+        wsDash.mergeCells('B4:C4'); wsDash.mergeCells('B5:C5');
+        wsDash.getCell('B4').value = '🟢 เงินงบประมาณ / รายรับรวมทั้งหมด';
+        wsDash.getCell('B4').font = { size: 10, bold: true, color: { argb: 'FF475569' }, name: 'Segoe UI' };
+        wsDash.getCell('B4').alignment = { horizontal: 'center', vertical: 'middle' };
+        wsDash.getCell('B5').value = totalInc;
+        wsDash.getCell('B5').numFmt = '#,##0.00';
+        wsDash.getCell('B5').font = { size: 18, bold: true, color: { argb: 'FF166534' }, name: 'Segoe UI' };
+        wsDash.getCell('B5').alignment = { horizontal: 'center', vertical: 'middle' };
+        ['B4','C4','B5','C5'].forEach(c => { wsDash.getCell(c).fill = { type: 'pattern', pattern:'solid', fgColor:{argb:'FFDCFCE7'} }; wsDash.getCell(c).border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'thin', color:{argb:'FFCBD5E1'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} }; });
+
+        // กล่องสรุปรายจ่าย (สีแดง)
+        wsDash.mergeCells('D4:E4'); wsDash.mergeCells('D5:E5');
+        wsDash.getCell('D4').value = '🔴 ค่าใช้จ่าย / รายจ่ายรวมทั้งหมด';
+        wsDash.getCell('D4').font = { size: 10, bold: true, color: { argb: 'FF475569' }, name: 'Segoe UI' };
+        wsDash.getCell('D4').alignment = { horizontal: 'center', vertical: 'middle' };
+        wsDash.getCell('D5').value = totalExp;
+        wsDash.getCell('D5').numFmt = '#,##0.00';
+        wsDash.getCell('D5').font = { size: 18, bold: true, color: { argb: 'FF991B1B' }, name: 'Segoe UI' };
+        wsDash.getCell('D5').alignment = { horizontal: 'center', vertical: 'middle' };
+        ['D4','E4','D5','E5'].forEach(c => { wsDash.getCell(c).fill = { type: 'pattern', pattern:'solid', fgColor:{argb:'FFFFE4E6'} }; wsDash.getCell(c).border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'thin', color:{argb:'FFCBD5E1'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} }; });
+
+        // กล่องสรุปเงินคงเหลือ (สีส้ม)
+        wsDash.mergeCells('F4:G4'); wsDash.mergeCells('F5:G5');
+        wsDash.getCell('F4').value = '🟡 ยอดงบประมาณคงเหลือปัจจุบัน';
+        wsDash.getCell('F4').font = { size: 10, bold: true, color: { argb: 'FF475569' }, name: 'Segoe UI' };
+        wsDash.getCell('F4').alignment = { horizontal: 'center', vertical: 'middle' };
+        wsDash.getCell('F5').value = balance;
+        wsDash.getCell('F5').numFmt = '#,##0.00';
+        wsDash.getCell('F5').font = { size: 18, bold: true, color: { argb: 'FF92400E' }, name: 'Segoe UI' };
+        wsDash.getCell('F5').alignment = { horizontal: 'center', vertical: 'middle' };
+        ['F4','G4','F5','G5'].forEach(c => { wsDash.getCell(c).fill = { type: 'pattern', pattern:'solid', fgColor:{argb:'FFFEF3C7'} }; wsDash.getCell(c).border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'thin', color:{argb:'FFCBD5E1'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} }; });
+
+        wsDash.getRow(4).height = 20;
+        wsDash.getRow(5).height = 30;
+
+        // หัวตารางแยกหมวดหมู่
+        wsDash.getCell('B7').value = '📋 สรุปงบประมาณแยกตามหมวดหมู่ค่าใช้จ่าย';
+        wsDash.getCell('B7').font = { size: 12, bold: true, color: { argb: 'FF1E293B' }, name: 'Segoe UI' };
+        
+        wsDash.getCell('B8').value = 'หมวดหมู่ค่าใช้จ่าย';
+        wsDash.getCell('C8').value = 'ยอดรวมรายจ่าย (บาท)';
+        ['B8','C8'].forEach(col => {
+            const cell = wsDash.getCell(col);
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Segoe UI', size: 11 };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'thin', color:{argb:'FFCBD5E1'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} };
+        });
+        wsDash.getRow(8).height = 25;
+
+        // ดึงหมวดหมู่แบบไดนามิก เพื่อให้ไม่พลาดหมวดหมู่ใดๆ
+        const uniqueCategories = [...new Set(sortedData.filter(t => t.type === 'expense').map(t => t.category))];
+
+        let rIdx = 9;
+        uniqueCategories.forEach((cat, index) => {
+            let catSum = sortedData.filter(t => t.type === 'expense' && t.category === cat).reduce((acc, t) => acc + t.amount, 0);
+            
+            let cName = wsDash.getCell(`B${rIdx}`);
+            cName.value = cat; cName.font = { name: 'Segoe UI', size: 11, color:{argb:'FF334155'} };
+            cName.alignment = { vertical: 'middle' };
+            cName.border = { top: {style:'thin', color:{argb:'FFE2E8F0'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'thin', color:{argb:'FFE2E8F0'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} };
+            
+            let cVal = wsDash.getCell(`C${rIdx}`);
+            cVal.value = catSum; cVal.numFmt = '#,##0.00'; cVal.font = { name: 'Segoe UI', size: 11, color:{argb:'FF334155'} };
+            cVal.alignment = { horizontal: 'right', vertical: 'middle' };
+            cVal.border = { top: {style:'thin', color:{argb:'FFE2E8F0'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'thin', color:{argb:'FFE2E8F0'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} };
+            
+            if (index % 2 === 1) {
+                cName.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+                cVal.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+            }
+            wsDash.getRow(rIdx).height = 20;
+            rIdx++;
+        });
+
+        // บรรทัดรวมท้ายตารางแดชบอร์ด
+        wsDash.getCell(`B${rIdx}`).value = 'รวมรายจ่ายทุกหมวดหมู่โครงการ';
+        wsDash.getCell(`B${rIdx}`).font = { bold: true, name: 'Segoe UI', size: 11 };
+        wsDash.getCell(`B${rIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
+        wsDash.getCell(`B${rIdx}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+        wsDash.getCell(`B${rIdx}`).border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'double', color:{argb:'FF1E293B'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} };
+
+        wsDash.getCell(`C${rIdx}`).value = totalExp;
+        wsDash.getCell(`C${rIdx}`).numFmt = '#,##0.00';
+        wsDash.getCell(`C${rIdx}`).font = { bold: true, name: 'Segoe UI', size: 11 };
+        wsDash.getCell(`C${rIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
+        wsDash.getCell(`C${rIdx}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+        wsDash.getCell(`C${rIdx}`).border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'double', color:{argb:'FF1E293B'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} };
+        wsDash.getRow(rIdx).height = 22;
+
+        // ----------------------------------------------------
+        // ชีทที่ 2: ตารางข้อมูลรายการบันทึกทั้งหมด
+        // ----------------------------------------------------
+        const wsData = workbook.addWorksheet('บันทึกรายการบัญชี', {views:[{showGridLines: true}]});
+        wsData.columns = [
+            { header: 'โปรเจกต์', key: 'proj', width: 25 },
+            { header: 'วันที่ทำรายการ', key: 'date', width: 16 },
+            { header: 'ประเภท', key: 'type', width: 15 },
+            { header: 'หมวดหมู่', key: 'cat', width: 35 },
+            { header: 'รายละเอียดงาน', key: 'desc', width: 45 },
+            { header: 'รายรับ (บาท)', key: 'inc', width: 18 },
+            { header: 'รายจ่าย (บาท)', key: 'exp', width: 18 }
+        ];
+
+        wsData.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Segoe UI', size: 11 };
+        wsData.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+        wsData.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' };
+        wsData.getRow(1).height = 26;
+
+        sortedData.forEach((t, i) => {
+            let row = wsData.addRow({
+                proj: t.project, date: t.date, type: t.type === 'income' ? 'รายรับ' : 'รายจ่าย',
+                cat: t.category, desc: t.description, inc: t.type === 'income' ? t.amount : 0, exp: t.type === 'expense' ? t.amount : 0
+            });
+            row.height = 20;
+            row.getCell('inc').numFmt = '#,##0.00';
+            row.getCell('exp').numFmt = '#,##0.00';
+            row.getCell('proj').alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell('date').alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell('type').alignment = { horizontal: 'center', vertical: 'middle' };
+            
+            row.eachCell({ includeEmpty: true }, function(cell) {
+                cell.border = { top: {style:'thin', color:{argb:'FFE2E8F0'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'thin', color:{argb:'FFE2E8F0'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} };
+                cell.font = { name: 'Segoe UI', size: 11, color:{argb:'FF334155'} };
+                if (i % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+            });
+        });
+
+        // แถวสรุปรวมใต้คอลัมน์ข้อมูลดิบ
+        let sumRow = wsData.addRow(['', '', '', '', 'รวมสุทธิทั้งหมด', totalInc, totalExp]);
+        sumRow.font = { bold: true, name: 'Segoe UI', size: 12 };
+        sumRow.getCell(6).numFmt = '#,##0.00';
+        sumRow.getCell(7).numFmt = '#,##0.00';
+        sumRow.eachCell({ includeEmpty: false }, function(cell, colNumber) {
+            cell.border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'double', color:{argb:'FF1E293B'}} };
+            if(colNumber >= 5) {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+                cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            }
+        });
+        wsData.autoFilter = 'A1:G1';
+
+        // ดำเนินการสร้างไฟล์เพื่อให้ผู้ใช้ดาวน์โหลดทันที
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        saveAs(blob, `รายงานสรุปโครงการ_${activeProject}.xlsx`);
+    }
+
+    window.onload = loadSystem;
+</script>
+</body>
+</html>
