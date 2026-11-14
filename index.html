@@ -7,7 +7,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
-        /* สไตล์ทั้งหมดเหมือนเดิมเป๊ะ เพื่อความสวยงาม */
         :root {
             --primary-color: #1E293B; --secondary-color: #3B82F6; --success-color: #10B981; 
             --danger-color: #EF4444; --warning-color: #F59E0B; --export-color: #10B981; 
@@ -24,6 +23,7 @@
         .btn { color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px; }
         .btn-success { background-color: var(--secondary-color); } .btn-success:hover { background-color: #2563EB; }
         .btn-export { background-color: var(--export-color); } .btn-export:hover { background-color: #059669; }
+        .btn-warning { background-color: var(--warning-color); } .btn-warning:hover { background-color: #D97706; }
         .btn-danger { background-color: var(--danger-color); } .btn-danger:hover { background-color: #DC2626; }
         .form-container, .dashboard-container, .table-container { background-color: var(--box-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
         h2, h3 { color: var(--primary-color); margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; font-size: 18px; }
@@ -48,7 +48,6 @@
         .modal { display: none; position: fixed; z-index: 1000; padding-top: 60px; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); }
         .modal-content { margin: auto; display: block; max-width: 90%; max-height: 80vh; border-radius: 8px; } .close-modal { position: absolute; top: 20px; right: 35px; color: #ffffff; font-size: 40px; font-weight: bold; cursor: pointer; } .hidden { display: none; }
         
-        /* เพิ่มสไตล์แจ้งเตือนสถานะออนไลน์ */
         #syncStatus {
             text-align: center; font-size: 13px; margin-top: -10px; margin-bottom: 10px; font-weight: bold; color: var(--success-color);
         }
@@ -66,6 +65,7 @@
         <div class="action-buttons">
             <button class="btn btn-export" onclick="exportToBeautifulExcel()">📊 ส่งออก Excel</button>
             <button class="btn btn-success" onclick="createNewProject()">+ เพิ่มโปรเจกต์</button>
+            <button class="btn btn-warning" onclick="editCurrentProject()">✏️ แก้ไขชื่อโปรเจกต์</button>
             <button class="btn btn-danger" onclick="deleteCurrentProject()">🗑️ ลบโปรเจกต์</button>
         </div>
     </div>
@@ -96,14 +96,14 @@
                         <option value="วัสดุ">วัสดุทั่วไป</option>
                         <option value="อลูมิเนียม">อลูมิเนียม</option>
                         <option value="เหล็ก-หลังคา-รางน้ำ">เหล็ก-หลังคา-รางน้ำ</option>
-                        <option value="ไทวัสดุ Homepro">ไทวัสดุ Homepro (ก/บ, บันได, สุขภัณฑ์)</option>
+                        <option value="ไทวัสดุ Hmpro">ไทวัสดุ Hmpro (ก/บ, บันได, สุขภัณฑ์)</option>
+                        <option value="อื่นๆ">อื่นๆ (น้ำไฟ..) + ค่าติดตั้งประปาไฟ</option>
                         <option value="ค่าส่วนกลาง">ค่าส่วนกลาง + มัดจำนิติ</option>
                         <option value="แอร์">แอร์</option>
                         <option value="ผ้าม่าน">ผ้าม่าน</option>
                         <option value="ปั๊มน้ำ">ปั๊มน้ำ + แท็งค์น้ำ</option>
                         <option value="ตกแต่ง">ตกแต่ง + เฟอร์นิเจอร์</option>
                         <option value="แม่บ้าน">แม่บ้าน</option>
-                        <option value="อื่นๆ">อื่นๆ</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -138,8 +138,7 @@
         
         <div style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
             <h4 style="margin-top: 0; margin-bottom: 15px; color: var(--text-main); font-size: 15px;">🏷️ สรุปรายจ่ายแยกตามหมวดหมู่</h4>
-            <div id="categorySummaryCards" style="display: flex; flex-wrap: wrap; gap: 12px;">
-                </div>
+            <div id="categorySummaryCards" style="display: flex; flex-wrap: wrap; gap: 12px;"></div>
         </div>
     </div>
 
@@ -154,7 +153,17 @@
         <div class="table-responsive">
             <table id="billingTable">
                 <thead>
-                    <tr><th>วันที่</th><th>ประเภท</th><th>หมวดหมู่</th><th>รายละเอียด</th><th style="text-align: center;">สลิป</th><th style="text-align: right;">รายรับ</th><th style="text-align: right;">รายจ่าย</th><th style="text-align: center;">จัดการ</th></tr>
+                    <tr>
+                        <th>วันที่</th>
+                        <th>ประเภท</th>
+                        <th>หมวดหมู่</th>
+                        <th>รายละเอียด</th>
+                        <th style="text-align: center;">สลิป</th>
+                        <th style="text-align: right;">รายรับ</th>
+                        <th style="text-align: right;">รายจ่าย</th>
+                        <th style="text-align: right;">ยอดคงเหลือ</th>
+                        <th style="text-align: center;">จัดการ</th>
+                    </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -167,21 +176,18 @@
     // ==========================================
     // ⚠️ นำลิงก์จาก Google Apps Script มาใส่ตรงนี้
     // ==========================================
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOJbUzBwteI-1-6XHkdt463jQlwJKgudW6pPuCTbTfUzfneh-Ob7lrES4sVDqCNy9X/exec"; 
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzE7MiO3Zagx0xe3etcYND1-kb01NfxM0H89A8zkZX0YUhdrVMCEx6rm21_kHknxyjt/exec"; 
     
     let systemData = { projects: ['โปรเจกต์หลัก'], transactions: [] };
     let activeProject = 'โปรเจกต์หลัก';
     let base64ImageStr = null;
-// ---------------- เพิ่มตัวแปรและฟังก์ชันนี้เข้าไป ----------------
     let currentCategoryFilter = 'all';
 
     function applyCategoryFilter() {
         currentCategoryFilter = document.getElementById('tableCategoryFilter').value;
-        renderProjectDashboardAndTable(); // สั่งให้วาดตารางใหม่ตามหมวดหมู่ที่เลือก
+        renderProjectDashboardAndTable();
     }
-    // -----------------------------------------------------------
 
-    // 1. ตอนเปิดเว็บ: โหลดจากเครื่องก่อน เพื่อความเร็ว แล้วค่อยดึง Google แบบเบื้องหลัง
     function loadSystem() {
         const storedData = localStorage.getItem('renovateDataOnline');
         if (storedData) {
@@ -191,10 +197,9 @@
             renderProjectDashboardAndTable();
         }
         document.getElementById('txDate').valueAsDate = new Date();
-        syncFromDatabase(); // สั่งดึงข้อมูลล่าสุดจาก Google Sheets
+        syncFromDatabase();
     }
 
-    // 2. ซิงค์ข้อมูลกับ Google Sheets (ดึงข้อมูล)
     async function syncFromDatabase() {
         try {
             const res = await fetch(GOOGLE_SCRIPT_URL);
@@ -202,13 +207,12 @@
             
             if (dbData && Array.isArray(dbData)) {
                 systemData.transactions = dbData;
-                // อัปเดตรายชื่อโปรเจกต์อัตโนมัติจากฐานข้อมูล
                 const dbProjects = [...new Set(dbData.map(t => t.project))];
                 dbProjects.forEach(p => {
                     if(!systemData.projects.includes(p)) systemData.projects.push(p);
                 });
                 
-                persistData(); // บันทึกลงเครื่อง
+                persistData();
                 refreshProjectDropdown();
                 renderProjectDashboardAndTable();
                 document.getElementById('syncStatus').innerHTML = "🟢 ซิงค์ฐานข้อมูลออนไลน์สำเร็จ (ข้อมูลล่าสุด)";
@@ -218,7 +222,6 @@
         }
     }
 
-    // 3. ฟังก์ชันส่งคำสั่งไป Google Sheets แบบพื้นหลัง (ไม่ทำให้เว็บค้าง)
     function sendCommandToGoogle(actionName, payloadData) {
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
@@ -252,17 +255,38 @@
         }
     }
 
+    function editCurrentProject() {
+        const newName = prompt(`กรุณากรอกชื่อโปรเจกต์ใหม่สำหรับ "${activeProject}":`, activeProject);
+        if (newName && newName.trim() !== '' && newName.trim() !== activeProject) {
+            const finalName = newName.trim();
+            if (systemData.projects.includes(finalName)) return alert('⚠️ มีโปรเจกต์ชื่อนี้แล้ว');
+            
+            const oldName = activeProject;
+            // แก้ไขในระบบ Local
+            systemData.projects[systemData.projects.indexOf(oldName)] = finalName;
+            systemData.transactions.forEach(t => {
+                if (t.project === oldName) t.project = finalName;
+            });
+            activeProject = finalName;
+            
+            persistData();
+            refreshProjectDropdown();
+            renderProjectDashboardAndTable();
+            
+            // ส่งคำสั่งอัปเดตไปที่ Google Sheets
+            sendCommandToGoogle('edit_project', { oldProject: oldName, newProject: finalName });
+            alert(`✅ เปลี่ยนชื่อเป็น "${finalName}" เรียบร้อยแล้ว`);
+        }
+    }
+
     function deleteCurrentProject() {
         if (systemData.projects.length <= 1) return alert('⚠️ ไม่สามารถลบโปรเจกต์สุดท้ายได้');
         if (confirm(`❌ แน่ใจไหมว่าต้องการลบโปรเจกต์ "${activeProject}" ถาวร ทั้งในเว็บและ Google Sheets?`)) {
-            // ลบในเครื่อง
             systemData.transactions = systemData.transactions.filter(t => t.project !== activeProject);
             systemData.projects = systemData.projects.filter(p => p !== activeProject);
             const deletedProject = activeProject;
             activeProject = systemData.projects[0];
             persistData(); refreshProjectDropdown(); renderProjectDashboardAndTable();
-            
-            // ลบในฐานข้อมูลออนไลน์
             sendCommandToGoogle('delete_project', { project: deletedProject });
         }
     }
@@ -317,12 +341,9 @@
             amount: parseFloat(amount), receiptImage: base64ImageStr || "-"
         };
 
-        // 1. โชว์ที่หน้าเว็บทันที
         systemData.transactions.push(payload);
         persistData();
         renderProjectDashboardAndTable();
-
-        // 2. ส่งขึ้น Google Sheets ทันที
         sendCommandToGoogle('add', { data: payload });
 
         document.getElementById('txAmount').value = ''; document.getElementById('txDescription').value = '';
@@ -341,14 +362,25 @@
 
     function renderProjectDashboardAndTable() {
         let totalIncome = 0; let totalExpense = 0;
-        let categoryTotals = {}; // ตัวแปรเก็บยอดรวมแต่ละหมวดหมู่
+        let categoryTotals = {};
         
         const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
         
         const currentTxList = systemData.transactions.filter(t => t.project === activeProject);
-        const sortedTxList = currentTxList.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // คำนวณยอดคงเหลือสะสม (เรียงตามลำดับเวลาเก่าสุดไปใหม่สุด)
+        const chronologicalTxList = [...currentTxList].sort((a, b) => new Date(a.date) - new Date(b.date));
+        let runningBal = 0;
+        chronologicalTxList.forEach(t => {
+            if (t.type === 'income') runningBal += t.amount;
+            else runningBal -= t.amount;
+            t.runningBalance = runningBal; 
+        });
 
-        // 1. ดึงหมวดหมู่ทั้งหมดที่มีในโปรเจกต์นี้มาใส่ใน Dropdown ตัวกรอง
+        // เรียงจากใหม่ไปเก่า เพื่อนำมาแสดงที่ตาราง
+        const sortedTxList = chronologicalTxList.reverse();
+
+        // หมวดหมู่ Dropdown
         const filterSelect = document.getElementById('tableCategoryFilter');
         const uniqueCategories = [...new Set(currentTxList.map(t => t.category))];
         
@@ -358,7 +390,6 @@
                 let opt = document.createElement('option'); opt.value = cat; opt.textContent = cat;
                 filterSelect.appendChild(opt);
             });
-            // คืนค่าที่เลือกไว้ก่อนหน้า
             if (uniqueCategories.includes(currentCategoryFilter)) {
                 filterSelect.value = currentCategoryFilter;
             } else {
@@ -366,22 +397,19 @@
             }
         }
 
-        // 2. กรองข้อมูลเฉพาะที่จะเอามาโชว์ในตาราง
         const tableDataToShow = sortedTxList.filter(t => typeof currentCategoryFilter === 'undefined' || currentCategoryFilter === 'all' || t.category === currentCategoryFilter);
 
-        // 3. คำนวณยอดรวม และ ยอดแยกหมวดหมู่ (คิดจาก "ทุกรายการในโปรเจกต์")
+        // คำนวณยอดรวม (รวมจากทุกรายการในโปรเจกต์)
         sortedTxList.forEach(t => {
             if (t.type === 'income') {
                 totalIncome += t.amount;
             } else {
                 totalExpense += t.amount;
-                // บวกยอดเข้าหมวดหมู่สำหรับฝั่งรายจ่าย
                 if (!categoryTotals[t.category]) categoryTotals[t.category] = 0;
                 categoryTotals[t.category] += t.amount;
             }
         });
 
-        // 4. วาดตาราง
         tableDataToShow.forEach(t => {
             let tr = document.createElement('tr');
             let badge = t.type === 'income' ? '<span class="badge badge-income">รายรับ</span>' : '<span class="badge badge-expense">รายจ่าย</span>';
@@ -390,27 +418,28 @@
             let displayDate = new Date(t.date);
             let formattedDate = !isNaN(displayDate.getTime()) ? displayDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : t.date;
 
+            // สีของยอดคงเหลือ (เขียวเหลืองเมื่อเป็นบวก, แดงเมื่อติดลบ)
+            let balColor = t.runningBalance >= 0 ? 'var(--warning-color)' : 'var(--danger-color)';
+
             tr.innerHTML = `
                 <td>${formattedDate}</td><td>${badge}</td><td>${t.category}</td><td>${t.description}</td><td style="text-align: center;">${slipElement}</td>
                 <td style="text-align: right; color: var(--success-color); font-weight: 500;">${t.type === 'income' ? currencyFormat(t.amount) : '-'}</td>
                 <td style="text-align: right; color: var(--danger-color); font-weight: 500;">${t.type === 'expense' ? currencyFormat(t.amount) : '-'}</td>
+                <td style="text-align: right; color: ${balColor}; font-weight: bold;">${currencyFormat(t.runningBalance)}</td>
                 <td style="text-align: center;"><button class="btn-delete" onclick="removeTransaction('${t.id}')">ลบ</button></td>
             `;
             tbody.appendChild(tr);
         });
         
-        if (tableDataToShow.length === 0) tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">🏠 ไม่มีข้อมูล</td></tr>`;
+        if (tableDataToShow.length === 0) tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 30px;">🏠 ไม่มีข้อมูล</td></tr>`;
 
-        // 5. อัปเดตการ์ดยอดสรุปด้านบน
         document.getElementById('summaryIncome').textContent = currencyFormat(totalIncome);
         document.getElementById('summaryExpense').textContent = currencyFormat(totalExpense);
         document.getElementById('summaryBalance').textContent = currencyFormat(totalIncome - totalExpense);
 
-        // 6. อัปเดตสรุปยอดแยกหมวดหมู่
         const catSummaryContainer = document.getElementById('categorySummaryCards');
         if (catSummaryContainer) {
             catSummaryContainer.innerHTML = '';
-            // เรียงลำดับหมวดหมู่จาก จ่ายมาก -> จ่ายน้อย
             const catKeys = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a]); 
             
             if (catKeys.length === 0) {
@@ -418,7 +447,6 @@
             } else {
                 catKeys.forEach(cat => {
                     let catCard = document.createElement('div');
-                    // สไตล์ของกล่องสรุปแต่ละหมวดหมู่
                     catCard.style = "background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 200px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
                     catCard.innerHTML = `
                         <span style="font-size: 14px; color: var(--primary-color); font-weight: 600;">${cat}</span>
@@ -433,27 +461,23 @@
     function showImageModal(source) { document.getElementById('imageModal').style.display = "block"; document.getElementById('modalTargetImg').src = source; }
     function closeImageModal() { document.getElementById('imageModal').style.display = "none"; }
 
-    // ฟังก์ชัน Excel ระดับพรีเมียม สวยงาม
     async function exportToBeautifulExcel() {
         const projectData = systemData.transactions.filter(t => t.project === activeProject);
         if (projectData.length === 0) return alert('⚠️ ไม่มีข้อมูลในโปรเจกต์นี้ที่สามารถส่งออกได้ครับ');
         
+        // เรียงลำดับสำหรับส่งออก (เก่าไปใหม่)
         const sortedData = [...projectData].sort((a, b) => new Date(a.date) - new Date(b.date));
 
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'Renovate Billing System';
         workbook.created = new Date();
 
-        // ----------------------------------------------------
-        // ชีทที่ 1: Dashboard สรุปภาพรวมโครงการ
-        // ----------------------------------------------------
         const wsDash = workbook.addWorksheet('Dashboard สรุปภาพรวม', {views:[{showGridLines: true}]});
         wsDash.getColumn('B').width = 42;
         wsDash.getColumn('C').width = 24;
         wsDash.getColumn('E').width = 22;
         wsDash.getColumn('G').width = 22;
 
-        // หัวข้อหลักหน้า Dashboard
         wsDash.mergeCells('B2:G2');
         const titleCell = wsDash.getCell('B2');
         titleCell.value = `📊 รายงานสรุปงบประมาณและค่าใช้จ่ายโครงการ: ${activeProject}`;
@@ -464,7 +488,6 @@
         sortedData.forEach(t => { if(t.type === 'income') totalInc += t.amount; else totalExp += t.amount; });
         let balance = totalInc - totalExp;
 
-        // กล่องสรุปรายรับ (สีเขียว)
         wsDash.mergeCells('B4:C4'); wsDash.mergeCells('B5:C5');
         wsDash.getCell('B4').value = '🟢 เงินงบประมาณ / รายรับรวมทั้งหมด';
         wsDash.getCell('B4').font = { size: 10, bold: true, color: { argb: 'FF475569' }, name: 'Segoe UI' };
@@ -475,7 +498,6 @@
         wsDash.getCell('B5').alignment = { horizontal: 'center', vertical: 'middle' };
         ['B4','C4','B5','C5'].forEach(c => { wsDash.getCell(c).fill = { type: 'pattern', pattern:'solid', fgColor:{argb:'FFDCFCE7'} }; wsDash.getCell(c).border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'thin', color:{argb:'FFCBD5E1'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} }; });
 
-        // กล่องสรุปรายจ่าย (สีแดง)
         wsDash.mergeCells('D4:E4'); wsDash.mergeCells('D5:E5');
         wsDash.getCell('D4').value = '🔴 ค่าใช้จ่าย / รายจ่ายรวมทั้งหมด';
         wsDash.getCell('D4').font = { size: 10, bold: true, color: { argb: 'FF475569' }, name: 'Segoe UI' };
@@ -486,7 +508,6 @@
         wsDash.getCell('D5').alignment = { horizontal: 'center', vertical: 'middle' };
         ['D4','E4','D5','E5'].forEach(c => { wsDash.getCell(c).fill = { type: 'pattern', pattern:'solid', fgColor:{argb:'FFFFE4E6'} }; wsDash.getCell(c).border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'thin', color:{argb:'FFCBD5E1'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} }; });
 
-        // กล่องสรุปเงินคงเหลือ (สีส้ม)
         wsDash.mergeCells('F4:G4'); wsDash.mergeCells('F5:G5');
         wsDash.getCell('F4').value = '🟡 ยอดงบประมาณคงเหลือปัจจุบัน';
         wsDash.getCell('F4').font = { size: 10, bold: true, color: { argb: 'FF475569' }, name: 'Segoe UI' };
@@ -500,7 +521,6 @@
         wsDash.getRow(4).height = 20;
         wsDash.getRow(5).height = 30;
 
-        // หัวตารางแยกหมวดหมู่
         wsDash.getCell('B7').value = '📋 สรุปงบประมาณแยกตามหมวดหมู่ค่าใช้จ่าย';
         wsDash.getCell('B7').font = { size: 12, bold: true, color: { argb: 'FF1E293B' }, name: 'Segoe UI' };
         
@@ -515,7 +535,6 @@
         });
         wsDash.getRow(8).height = 25;
 
-        // ดึงหมวดหมู่แบบไดนามิก เพื่อให้ไม่พลาดหมวดหมู่ใดๆ
         const uniqueCategories = [...new Set(sortedData.filter(t => t.type === 'expense').map(t => t.category))];
 
         let rIdx = 9;
@@ -540,7 +559,6 @@
             rIdx++;
         });
 
-        // บรรทัดรวมท้ายตารางแดชบอร์ด
         wsDash.getCell(`B${rIdx}`).value = 'รวมรายจ่ายทุกหมวดหมู่โครงการ';
         wsDash.getCell(`B${rIdx}`).font = { bold: true, name: 'Segoe UI', size: 11 };
         wsDash.getCell(`B${rIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
@@ -555,9 +573,6 @@
         wsDash.getCell(`C${rIdx}`).border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'double', color:{argb:'FF1E293B'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} };
         wsDash.getRow(rIdx).height = 22;
 
-        // ----------------------------------------------------
-        // ชีทที่ 2: ตารางข้อมูลรายการบันทึกทั้งหมด
-        // ----------------------------------------------------
         const wsData = workbook.addWorksheet('บันทึกรายการบัญชี', {views:[{showGridLines: true}]});
         wsData.columns = [
             { header: 'โปรเจกต์', key: 'proj', width: 25 },
@@ -566,7 +581,8 @@
             { header: 'หมวดหมู่', key: 'cat', width: 35 },
             { header: 'รายละเอียดงาน', key: 'desc', width: 45 },
             { header: 'รายรับ (บาท)', key: 'inc', width: 18 },
-            { header: 'รายจ่าย (บาท)', key: 'exp', width: 18 }
+            { header: 'รายจ่าย (บาท)', key: 'exp', width: 18 },
+            { header: 'ยอดคงเหลือ (บาท)', key: 'bal', width: 20 }
         ];
 
         wsData.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Segoe UI', size: 11 };
@@ -574,14 +590,24 @@
         wsData.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' };
         wsData.getRow(1).height = 26;
 
+        let excelRunningBal = 0;
+
         sortedData.forEach((t, i) => {
+            if (t.type === 'income') excelRunningBal += t.amount;
+            else excelRunningBal -= t.amount;
+
             let row = wsData.addRow({
                 proj: t.project, date: t.date, type: t.type === 'income' ? 'รายรับ' : 'รายจ่าย',
-                cat: t.category, desc: t.description, inc: t.type === 'income' ? t.amount : 0, exp: t.type === 'expense' ? t.amount : 0
+                cat: t.category, desc: t.description, 
+                inc: t.type === 'income' ? t.amount : 0, 
+                exp: t.type === 'expense' ? t.amount : 0,
+                bal: excelRunningBal
             });
+            
             row.height = 20;
             row.getCell('inc').numFmt = '#,##0.00';
             row.getCell('exp').numFmt = '#,##0.00';
+            row.getCell('bal').numFmt = '#,##0.00';
             row.getCell('proj').alignment = { horizontal: 'center', vertical: 'middle' };
             row.getCell('date').alignment = { horizontal: 'center', vertical: 'middle' };
             row.getCell('type').alignment = { horizontal: 'center', vertical: 'middle' };
@@ -593,11 +619,11 @@
             });
         });
 
-        // แถวสรุปรวมใต้คอลัมน์ข้อมูลดิบ
-        let sumRow = wsData.addRow(['', '', '', '', 'รวมสุทธิทั้งหมด', totalInc, totalExp]);
+        let sumRow = wsData.addRow(['', '', '', '', 'รวมสุทธิทั้งหมด', totalInc, totalExp, balance]);
         sumRow.font = { bold: true, name: 'Segoe UI', size: 12 };
         sumRow.getCell(6).numFmt = '#,##0.00';
         sumRow.getCell(7).numFmt = '#,##0.00';
+        sumRow.getCell(8).numFmt = '#,##0.00';
         sumRow.eachCell({ includeEmpty: false }, function(cell, colNumber) {
             cell.border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'double', color:{argb:'FF1E293B'}} };
             if(colNumber >= 5) {
@@ -605,9 +631,8 @@
                 cell.alignment = { horizontal: 'right', vertical: 'middle' };
             }
         });
-        wsData.autoFilter = 'A1:G1';
+        wsData.autoFilter = 'A1:H1';
 
-        // ดำเนินการสร้างไฟล์เพื่อให้ผู้ใช้ดาวน์โหลดทันที
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         saveAs(blob, `รายงานสรุปโครงการ_${activeProject}.xlsx`);
